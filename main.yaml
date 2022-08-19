@@ -1,0 +1,49 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Load encrypted credentials
+      community.sops.load_vars:
+        file: ./secrets.yaml
+    - name: Configure firewall for server
+      community.hrobot.firewall:
+        hetzner_user: '{{ hetzner_user }}'
+        hetzner_password: '{{ hetzner_pass }}'
+        server_ip: '{{ server_ip }}'
+        state: present
+        allowlist_hos: true
+        rules:
+          input:
+            - name: ICMP
+              ip_version: ipv4
+              protocol: icmp
+              action: accept
+            - name: TCP established
+              ip_version: ipv4
+              protocol: tcp
+              dst_port: 32768-65535
+              tcp_flags: ack
+              action: accept
+            - name: SSH
+              ip_version: ipv4
+              src_ip: '{{ source_ip_cidr }}'
+              dst_port: '22'
+              protocol: tcp
+              action: accept
+            - name: HTTP
+              ip_version: ipv4
+              dst_port: '80'
+              action: accept
+            - name: HTTPS
+              ip_version: ipv4
+              dst_port: '443'
+              action: accept
+            - name: Syncthing
+              ip_version: ipv4
+              dst_port: '8384'
+              action: accept
+            - name: Drop all
+              ip_version: ipv4
+              action: discard
+      register: result
+    - ansible.builtin.debug:
+        msg: '{{ result }}'
