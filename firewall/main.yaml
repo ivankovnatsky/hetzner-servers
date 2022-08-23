@@ -29,6 +29,12 @@
               dst_port: '22'
               protocol: tcp
               action: accept
+            - name: SSH
+              ip_version: ipv4
+              src_ip: '{{ dynamic_source_ip_cidr }}'
+              dst_port: '22'
+              protocol: tcp
+              action: accept
             - name: HTTP
               ip_version: ipv4
               dst_port: '80'
