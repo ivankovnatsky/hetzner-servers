@@ -1,17 +1,13 @@
 ---
-- hosts: hetzner
+# - hosts: hetzner
+- hosts: local
 
   tasks:
-    - name: Install packages
+    - name: Install base packages
       ansible.builtin.apt:
         name: '{{ item }}'
         state: present
       with_items:
-        - fzf
-        - git
-        - tmux
-        - neovim
-        - htop
         - ca-certificates
         - curl
         - gnupg
@@ -22,20 +18,11 @@
         state: directory
     - name: Set docker
       shell: |
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --yes --dearmor -o /etc/apt/keyrings/docker.gpg
 
         echo \
           "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
           $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    - name: Install packages
-      ansible.builtin.apt:
-        name: '{{ item }}'
-        state: present
-      with_items:
-        - docker-ce
-        - docker-ce-cli
-        - containerd.io
-        - docker-compose-plugin
     - name: Create docker cli dir
       ansible.builtin.file:
         dest: $HOME/.docker/cli-plugins
@@ -47,15 +34,6 @@
         docker buildx create --name mybuilder
         docker buildx use mybuilder
         docker buildx inspect --bootstrap
-    - name: Install packages
-      ansible.builtin.apt:
-        name: '{{ item }}'
-        state: present
-      with_items:
-        - qemu-system
-        - qemu
-        - binfmt-support
-        - qemu-user-static
     - name: Create a syncthing config
       ansible.builtin.template:
         src: ./syncthing.service
@@ -63,3 +41,32 @@
         owner: root
         group: root
         mode: 0644
+    - name: Add 1password repo
+      shell: |
+        curl -sS https://downloads.1password.com/linux/keys/1password.asc | gpg --yes --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
+
+        echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' | tee /etc/apt/sources.list.d/1password.list
+
+        mkdir -p /etc/debsig/policies/AC2D62742012EA22/
+        curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | tee /etc/debsig/policies/AC2D62742012EA22/1password.pol
+        mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
+        curl -sS https://downloads.1password.com/linux/keys/1password.asc | gpg --yes --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+    - name: Install packages
+      ansible.builtin.apt:
+        name: '{{ item }}'
+        state: present
+      with_items:
+        - binfmt-support
+        - containerd.io
+        - docker-ce
+        - docker-ce-cli
+        - docker-compose-plugin
+        - fzf
+        - git
+        - htop
+        - neovim
+        - qemu
+        - qemu-system
+        - qemu-user-static
+        - tmux
+        - 1password
