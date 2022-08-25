@@ -17,21 +17,15 @@
               ip_version: ipv4
               protocol: icmp
               action: accept
-            - name: TCP established
+            - name: SSH 1
               ip_version: ipv4
-              protocol: tcp
-              dst_port: 32768-65535
-              tcp_flags: ack
-              action: accept
-            - name: SSH
-              ip_version: ipv4
-              src_ip: '{{ source_ip_cidr }}'
+              src_ip: '{{ source_ip_cidr1 }}'
               dst_port: '22'
               protocol: tcp
               action: accept
-            - name: SSH
+            - name: SSH 2
               ip_version: ipv4
-              src_ip: '{{ dynamic_source_ip_cidr }}'
+              src_ip: '{{ source_ip_cidr2 }}'
               dst_port: '22'
               protocol: tcp
               action: accept
@@ -43,9 +37,25 @@
               ip_version: ipv4
               dst_port: '443'
               action: accept
-            - name: Syncthing
+            - name: Syncthing 1
               ip_version: ipv4
               dst_port: '8384'
+              src_ip: '{{ source_ip_cidr1 }}'
+              action: accept
+            - name: Syncthing 2
+              ip_version: ipv4
+              dst_port: '8384'
+              src_ip: '{{ source_ip_cidr2 }}'
+              action: accept
+            - name: TCP established
+              ip_version: ipv4
+              protocol: tcp
+              dst_port: 32768-65535
+              tcp_flags: ack
+              action: accept
+            - name: DNS established
+              ip_version: ipv4
+              protocol: udp
               action: accept
             - name: Drop all
               ip_version: ipv4
