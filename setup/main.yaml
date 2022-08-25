@@ -16,12 +16,17 @@
         dest: "/home/{{ user }}/.ssh"
         state: directory
         owner: "{{ user }}"
-        group: "{{ user }}
+        group: "{{ user }}"
         mode: '0644'
+    - name: Update apt cache
+      ansible.builtin.apt:
+        state: present
+        update_cache: true
     - name: Install base packages
       ansible.builtin.apt:
         name: '{{ item }}'
         state: present
+        update_cache: true
       with_items:
         - ca-certificates
         - curl
@@ -40,15 +45,34 @@
           $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
     - name: Create docker cli dir
       ansible.builtin.file:
-        dest: $HOME/.docker/cli-plugins
+        dest: "/home/{{ user }}/.docker/cli-plugins"
         state: directory
+    - name: Install docker packages
+      ansible.builtin.apt:
+        name: '{{ item }}'
+        state: present
+        update_cache: true
+      with_items:
+        - binfmt-support
+        - containerd.io
+        - docker-ce
+        - docker-ce-cli
+        - docker-compose-plugin
+        - qemu
+        - qemu-system
+        - qemu-user-static
     - name: Set docker
       shell: |
-        wget -c https://github.com/docker/buildx/releases/download/v0.9.1/buildx-v0.9.1.linux-amd64 -P $HOME/.docker/cli-plugins
+        wget -c https://github.com/docker/buildx/releases/download/v0.9.1/buildx-v0.9.1.linux-amd64 -P "/home/{{ user }}/.docker/cli-plugins"
         docker buildx install
         docker buildx create --name mybuilder
         docker buildx use mybuilder
         docker buildx inspect --bootstrap
+    - name: Set syncthing repo
+      shell: |
+        curl -o /usr/share/keyrings/syncthing-archive-keyring.gpg https://syncthing.net/release-key.gpg
+
+        echo "deb [signed-by=/usr/share/keyrings/syncthing-archive-keyring.gpg] https://apt.syncthing.net/ syncthing stable" | tee /etc/apt/sources.list.d/syncthing.list
     - name: Install syncthing
       ansible.builtin.apt:
         name: '{{ item }}'
@@ -56,13 +80,6 @@
         update_cache: true
       with_items:
         - syncthing
-    - name: Create a syncthing config
-      ansible.builtin.template:
-        src: ./syncthing.service
-        dest: /etc/systemd/system/syncthing@.service
-        owner: root
-        group: root
-        mode: 0644
     - name: Setup syncthing auto-launch
       shell: |
         systemctl enable syncthing@{{ user }}.service
@@ -83,17 +100,9 @@
         state: present
         update_cache: true
       with_items:
-        - binfmt-support
-        - containerd.io
-        - docker-ce
-        - docker-ce-cli
-        - docker-compose-plugin
         - fzf
         - git
         - htop
         - neovim
-        - qemu
-        - qemu-system
-        - qemu-user-static
         - tmux
         - 1password
