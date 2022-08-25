@@ -1,8 +1,23 @@
 ---
-# - hosts: hetzner
-- hosts: local
+- hosts: hetzner
+# - hosts: local
+
+  vars:
+    - user: ivan
 
   tasks:
+    - name: Add user
+      ansible.builtin.user:
+        name: '{{ user }}'
+        shell: /bin/bash
+        groups: sudo
+    - name: Create dir for .ssh
+      ansible.builtin.file:
+        dest: "/home/{{ user }}/.ssh"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}
+        mode: '0644'
     - name: Install base packages
       ansible.builtin.apt:
         name: '{{ item }}'
@@ -34,13 +49,24 @@
         docker buildx create --name mybuilder
         docker buildx use mybuilder
         docker buildx inspect --bootstrap
+    - name: Install syncthing
+      ansible.builtin.apt:
+        name: '{{ item }}'
+        state: present
+        update_cache: true
+      with_items:
+        - syncthing
     - name: Create a syncthing config
       ansible.builtin.template:
         src: ./syncthing.service
-        dest: /etc/systemd/system/syncthing.service
+        dest: /etc/systemd/system/syncthing@.service
         owner: root
         group: root
         mode: 0644
+    - name: Setup syncthing auto-launch
+      shell: |
+        systemctl enable syncthing@{{ user }}.service
+        systemctl start syncthing@{{ user }}.service
     - name: Add 1password repo
       shell: |
         curl -sS https://downloads.1password.com/linux/keys/1password.asc | gpg --yes --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
@@ -55,6 +81,7 @@
       ansible.builtin.apt:
         name: '{{ item }}'
         state: present
+        update_cache: true
       with_items:
         - binfmt-support
         - containerd.io
