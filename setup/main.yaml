@@ -68,6 +68,7 @@
         docker buildx create --name mybuilder
         docker buildx use mybuilder
         docker buildx inspect --bootstrap
+        docker run --privileged --rm tonistiigi/binfmt --install arm64,arm
     - name: Set syncthing repo
       shell: |
         curl -o /usr/share/keyrings/syncthing-archive-keyring.gpg https://syncthing.net/release-key.gpg
