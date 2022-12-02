@@ -1,5 +1,6 @@
 ---
 - hosts: hetzner
+  # become: yes
 # - hosts: local
 
   vars:
@@ -10,14 +11,14 @@
       ansible.builtin.user:
         name: '{{ user }}'
         shell: /bin/bash
-        groups: sudo
-    - name: Create dir for .ssh
-      ansible.builtin.file:
-        dest: "/home/{{ user }}/.ssh"
-        state: directory
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: '0644'
+        groups: sudo,docker
+        system: true
+    - name: Set authorized key taken from file
+      ansible.posix.authorized_key:
+        user: ivan
+        state: present
+        manage_dir: false
+        key: "{{ lookup('file', '/Users/ivan/.ssh/id_rsa.pub') }}"
     - name: Update apt cache
       ansible.builtin.apt:
         state: present
@@ -106,4 +107,5 @@
         - htop
         - neovim
         - tmux
-        - 1password
+        - ripgrep
+        - 1password-cli
