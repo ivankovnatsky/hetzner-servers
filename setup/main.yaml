@@ -19,16 +19,11 @@
         state: present
         manage_dir: false
         key: "{{ lookup('file', '/Users/ivan/.ssh/id_rsa.pub') }}"
-    - name: Update apt cache
-      ansible.builtin.apt:
-        state: present
-        update_cache: true
     - name: Install base packages
       ansible.builtin.apt:
-        name: '{{ item }}'
         state: present
         update_cache: true
-      with_items:
+        pkg:
         - ca-certificates
         - curl
         - gnupg
@@ -50,10 +45,9 @@
         state: directory
     - name: Install docker packages
       ansible.builtin.apt:
-        name: '{{ item }}'
         state: present
         update_cache: true
-      with_items:
+        pkg:
         - binfmt-support
         - containerd.io
         - docker-ce
@@ -98,14 +92,27 @@
         curl -sS https://downloads.1password.com/linux/keys/1password.asc | gpg --yes --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
     - name: Install packages
       ansible.builtin.apt:
-        name: '{{ item }}'
         state: present
         update_cache: true
-      with_items:
+        pkg:
         - fzf
         - git
         - htop
         - neovim
         - tmux
         - ripgrep
+        - file
+        - command-not-found
         - 1password-cli
+    - name: Install deb-get
+      ansible.builtin.get_url:
+        url: https://github.com/wimpysworld/deb-get/releases/download/0.3.6/deb-get_0.3.6-1_all.deb
+        dest: /tmp/deb-get_0.3.6-1_all.deb
+    - name: Install a .deb package
+      ansible.builtin.apt:
+        deb: /tmp/deb-get_0.3.6-1_all.deb
+    - name: Install packages with deb-get
+      shell: |
+        deb-get install '{{ item }}'
+      with_items:
+        - du-dust
