@@ -5,6 +5,7 @@
 
   vars:
     - user: ivan
+    - executable_temp_dir: /tmp
 
   tasks:
     - name: Add user
@@ -95,15 +96,24 @@
         state: present
         update_cache: true
         pkg:
+        - 1password-cli
+        - command-not-found
+        - fail2ban
+        - file
         - fzf
         - git
         - htop
         - neovim
-        - tmux
+        - postgresql
+        - postgresql-contrib
+        - python3-pip
         - ripgrep
-        - file
-        - command-not-found
-        - 1password-cli
+        - tmux
+        - unzip
+    - name: Install multi python packages with version specifiers
+      ansible.builtin.pip:
+        name:
+          - ansible
     - name: Install deb-get
       ansible.builtin.get_url:
         url: https://github.com/wimpysworld/deb-get/releases/download/0.3.6/deb-get_0.3.6-1_all.deb
@@ -116,3 +126,37 @@
         deb-get install '{{ item }}'
       with_items:
         - du-dust
+    - name: Download awscliv2 installer
+      unarchive:
+        src: "https://awscli.amazonaws.com/awscli-exe-linux-{{ ansible_architecture }}.zip"
+        dest: "{{ executable_temp_dir }}"
+        remote_src: true
+        creates: '{{ executable_temp_dir }}/aws'
+        mode: 0755
+    - name: Run the installer
+      command:
+      args:
+        cmd: "{{ executable_temp_dir }}/aws/install"
+        creates: /usr/local/bin/aws
+      become: true
+      register: aws_install
+    - name: Show installer output
+      debug:
+        var: aws_install
+        verbosity: 2
+    - name: Get elastio cli
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/elastio/elastio-stack/master/scripts/install-elastio.sh
+        dest: /tmp/install-elastio.sh
+        mode: u=rwx
+    - name: Install elastio cli
+      shell: |
+        /tmp/install-elastio.sh
+    - name: Get docker slim
+      ansible.builtin.unarchive:
+        src: https://downloads.dockerslim.com/releases/1.39.1/dist_linux.tar.gz
+        dest: /tmp
+        remote_src: yes
+    - name: Place docker slim binary
+      shell:
+        mv /tmp/dist_linux/* /usr/local/bin
